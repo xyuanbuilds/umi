@@ -22,14 +22,20 @@
     "doctor": "father doctor",
     "prebundle": "father prebundle",
     "release": "father doctor && esno ../scripts/release.ts --pkg copilot",
-    "test": "jest"
+    "test": "umi-scripts jest-turbo"
   },
   "dependencies": {
     "@umijs/utils": "workspace:*",
     "zx": "^7.2.1"
   },
   "devDependencies": {
+    "@stdlib/blas": "^0.0.12",
+    "@types/marked": "^4.0.8",
+    "crypto": "^1.0.1",
+    "gpt-3-encoder": "^1.1.4",
     "https-proxy-agent": "5.0.1",
+    "marked": "^4.3.0",
+    "openai": "^3.2.1",
     "socks-proxy-agent": "7.0.0"
   },
   "publishConfig": {

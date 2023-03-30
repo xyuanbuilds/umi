@@ -1,7 +1,9 @@
 import { chalk, clackPrompts, logger, resolve, yParser } from '@umijs/utils';
 import { sendMessage } from './chatgpt';
-import { SYSTEM_PROMPT } from './constants';
+import { getMessageFromEmbedding } from './knowledge/ask';
+import { buildKnowledgeEmbeddings } from './knowledge/embedding';
 import { printHelp } from './printHelp';
+import { commandTemplate } from './prompts/template';
 const { confirm, spinner } = clackPrompts;
 
 export async function main() {
@@ -18,6 +20,11 @@ export async function main() {
     return;
   }
 
+  if (args.init) {
+    await buildKnowledgeEmbeddings();
+    return;
+  }
+
   // --token
   const token = process.env.OPENAI_API_KEY || args.token;
   if (!token) {
@@ -27,21 +34,58 @@ export async function main() {
   const message = args._.join(' ');
   const s = spinner();
   s.start('🕖  Hold on, asking OpenAI...');
+  // Simple
+  // const commandRes = await sendMessage({
+  //   messages: [
+  //     {
+  //       role: 'system',
+  //       content: prompts.commands,
+  //     },
+  //     {
+  //       role: 'user',
+  //       content: message,
+  //     },
+  //   ],
+  //   token,
+  //   // --proxy-url
+  //   proxyUrl: args.proxyUrl,
+  // });
+  // const willUseCommand: string = commandRes.data.choices[0].message.content;
+  // if (!prompts[willUseCommand]) {
+  //   throw new Error('no command');
+  // }
+  // const res = await sendMessage({
+  //   messages: [
+  //     {
+  //       role: 'system',
+  //       content: prompts[willUseCommand],
+  //     },
+  //     {
+  //       role: 'user',
+  //       content: message,
+  //     },
+  //   ],
+  //   token,
+  //   // --proxy-url
+  //   proxyUrl: args.proxyUrl,
+  // });
+
+  const messageByFit = await getMessageFromEmbedding(message);
   const res = await sendMessage({
-    messages: [
-      {
-        role: 'system',
-        content: SYSTEM_PROMPT,
-      },
-      {
-        role: 'user',
-        content: message,
-      },
-    ],
+    messages: messageByFit.map((message) => {
+      if (message.role === 'system') {
+        return {
+          ...message,
+          content: commandTemplate(message.content),
+        };
+      } else {
+        return message;
+      }
+    }),
     token,
-    // --proxy-url
     proxyUrl: args.proxyUrl,
   });
+
   s.stop();
   const command = res.data.choices[0].message.content;
   logger.info('The suggested command is:');
